@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Push, and Update Deploy Repo
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,7 +19,20 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker Image
+        id: build
         run: |
-          IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/cicd-new:latest
-          docker build -t $IMAGE .
-          docker push $IMAGE
+          IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/cicd-new
+          TAG=$(date +%Y%m%d%H%M%S)
+          docker build -t $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
+          echo "image=$IMAGE:$TAG" >> $GITHUB_OUTPUT
+
+      - name: Update Deployment Repo with New Image
+        run: |
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN_DEPLOY_REPO }}@github.com/<your_github_username>/cicd-new-deploy.git
+          cd cicd-new-deploy
+          sed -i "s|image: .*|image: ${{ steps.build.outputs.image }}|" deployment.yaml
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "Updated image to ${{ steps.build.outputs.image }}"
+          git push origin main
