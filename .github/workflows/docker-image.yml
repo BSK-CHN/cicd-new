@@ -29,7 +29,7 @@ jobs:
 
       - name: Update Deployment Repo with New Image
         run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN_DEPLOY_REPO }}@github.com/<your_github_username>/cicd-new-deploy.git
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN_DEPLOY_REPO }}@github.com/BSK-CHN/cicd-new-deploy.git
           cd cicd-new-deploy
           sed -i "s|image: .*|image: ${{ steps.build.outputs.image }}|" deployment.yaml
           git config user.name "github-actions"
